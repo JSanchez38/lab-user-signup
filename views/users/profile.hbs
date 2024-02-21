@@ -1,0 +1,11 @@
+
+<h2>Welcome to your profile</h2>
+
+<div id="profile">
+    <p>{{user.email}}</p>
+    <a type="submit" href="/users/{{user.id}}/edit"class="btn btn-outline-primary">Edit</a>
+    
+    <form action="/users/{{user.id}}/delete" method="POST">
+        <button class="btn btn-outline-danger" type="submit">Delete</button>
+    </form>
+</div>
