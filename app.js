@@ -1,5 +1,6 @@
 // Load env vars
 require("dotenv").config();
+const authMiddleware = require('./middlewares/auth.middleware')
 
 const express = require("express");
 const logger = require("morgan");
@@ -21,6 +22,8 @@ app.use((req, res, next) => {
   res.locals.currentPath = req.path;
   next();
 });
+
+app.use(authMiddleware.loadUser)
 
 // Application routes
 const routes = require("./configs/routes.config");

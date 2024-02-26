@@ -1,6 +1,9 @@
 const User = require("../models/user.model");
-const bcrypt = require('bcrypt')
 const createError = require('http-errors')
+const mongoose = require('mongoose')
+const { sessions } = require('../middlewares/auth.middleware')
+
+
 
 module.exports.create = (req, res, next) => {
     res.render('users/signup')
@@ -10,34 +13,41 @@ module.exports.create = (req, res, next) => {
 module.exports.doCreate = (req, res, next) => {
     const user = { email: req.body.email, password: req.body.password };
 
-    bcrypt.hash(req.body.password, 10)
-        .then(function (hash) {
-            User.create({ email: req.body.email, password: hash })
-            .then((user) => res.redirect(`/users/${user.id}`))
-            .catch((error) => {
-                if (error instanceof mongoose.Error.ValidationError) {
-                    res
-                        .status(400)
-                        .render("users/signup", { user, error: error.errors});
-                } else {
-                    next(error);
-                }
-            });
-    })
-        .catch(next);
+    User.create(user)
+        .then((user) => res.redirect('/login'))
+        .catch((error) => {
+            if (error instanceof mongoose.Error.ValidationError) {
+                res.status(400).render("users/signup", { user, error: error.errors});
+            } else {
+                next(error);
+            }
+        });
 };
 
-module.exports.detail = (req, res, next) => {
-    const { id } = req.params
-    User.findById(id)
+module.exports.login = (req, res, next) => {
+    res.render('users/login')
+}
+
+module.exports.doLogin = (req, res, next) => {
+    User.findOne({ email: req.body.email })
         .then((user) => {
-            if (!user) {
-                next(createError(404, 'User not found'))
-            } else {
-                res.render('users/profile', { user })
-            }
+            user.checkPassword(req.body.password).then((match) => {
+                if (match) {
+                    const sessionId = Math.random().toString(36).substring(2, 15)
+                    sessions.push({ sessionId, userId: user.id})
+
+                    res.setHeader('Set-Cookie', `sessionId=${sessionId}`)
+                    res.redirect('/profile')
+                } else {
+                    res.redirect('/login')
+                }
+            })
         })
-        .catch((error) => next(error))
+        .catch(next)
+}
+
+module.exports.profile = (req, res, next) => {
+    res.render('users/profile')
 }
 
 module.exports.edit = (req, res, next) => {
